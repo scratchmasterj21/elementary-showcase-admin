@@ -19,6 +19,8 @@ const Admin: React.FC = () => {
     category: 'feliceUpcoming',
   });
   const [events, setEvents] = useState<Event[]>([]);
+  const [currentEvents, setCurrentEvents] = useState<Event[]>([]);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editedEvent, setEditedEvent] = useState<Event>({
     name: '',
@@ -40,6 +42,17 @@ const Admin: React.FC = () => {
 
     fetchEvents();
   }, []);
+
+  useEffect(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split('T')[0];
+
+    const current = events.filter(event => event.date >= today);
+    setCurrentEvents(current);
+
+    const past = events.filter(event => event.date < today);
+    setPastEvents(past);
+  }, [events]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -201,7 +214,6 @@ const Admin: React.FC = () => {
           >
             <option value="feliceUpcoming">Felice Upcoming</option>
             <option value="robocciaUpcoming">Roboccia Upcoming</option>
-            <option value="past">Past Events</option>
           </select>
         </div>
         <div className="flex items-center justify-between">
@@ -214,8 +226,8 @@ const Admin: React.FC = () => {
         </div>
       </form>
 
-      {/* Events Table */}
-      <h2 className="text-2xl font-bold mb-4">Events List</h2>
+      {/* Current Events Table */}
+      <h2 className="text-2xl font-bold mb-4">Current Events</h2>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-300">
           <thead>
@@ -228,7 +240,127 @@ const Admin: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {events.map(event => (
+            {currentEvents.map(event => (
+              <tr key={event.id} className="hover:bg-gray-50">
+                <td className="py-2 px-4 border-b">
+                  {editingEventId === event.id ? (
+                    <input
+                      type="text"
+                      name="name"
+                      value={editedEvent.name}
+                      onChange={handleEditChange}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  ) : (
+                    event.name
+                  )}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  {editingEventId === event.id ? (
+                    <input
+                      type="date"
+                      name="date"
+                      value={editedEvent.date}
+                      onChange={handleEditChange}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  ) : (
+                    event.date
+                  )}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  {editingEventId === event.id ? (
+                    <textarea
+                      name="description"
+                      value={editedEvent.description}
+                      onChange={handleEditChange}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                  ) : (
+                    event.description
+                  )}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  {editingEventId === event.id ? (
+                    <select
+                      name="category"
+                      value={editedEvent.category}
+                      onChange={handleEditChange}
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    >
+                      <option value="feliceUpcoming">Felice Upcoming</option>
+                      <option value="robocciaUpcoming">Roboccia Upcoming</option>
+                    </select>
+                  ) : (
+                    event.category
+                  )}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  {editingEventId === event.id ? (
+                    <>
+                      <button
+                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline mr-2"
+                        onClick={handleUpdate}
+                      >
+                        <Save className="h-4 w-4"/>
+                      </button>
+                      <button
+                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline"
+                        onClick={() => {
+                          setEditingEventId(null);
+                          setEditedEvent({
+                            name: '',
+                            date: '',
+                            description: '',
+                            category: 'feliceUpcoming',
+                          });
+                        }}
+                      >
+                        <X className="h-4 w-4"/>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline mr-2"
+                        onClick={() => handleEdit(event)}
+                      >
+                        <Edit className="h-4 w-4"/>
+                      </button>
+                      <button
+                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded focus:outline-none focus:shadow-outline"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this event?')) {
+                            handleDelete(event.id || '');
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4"/>
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Past Events Table */}
+      <h2 className="text-2xl font-bold mb-4 mt-8">Past Events</h2>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-300">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="py-2 px-4 border-b">Name</th>
+              <th className="py-2 px-4 border-b">Date</th>
+              <th className="py-2 px-4 border-b">Description</th>
+              <th className="py-2 px-4 border-b">Category</th>
+              <th className="py-2 px-4 border-b">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pastEvents.map(event => (
               <tr key={event.id} className="hover:bg-gray-50">
                 <td className="py-2 px-4 border-b">
                   {editingEventId === event.id ? (
